@@ -1,0 +1,349 @@
+# ═══════════════════════════════════════════════════════════════
+# Inactive Player Exporter — Cline Rules
+# ═══════════════════════════════════════════════════════════════
+# این فایل تمام ویرایش‌های Cline در این مخزن را کنترل می‌کند.
+# اگر قاعده‌ای با دستور کاربر تضاد داشت، قبل از ادامه بپرس.
+# اگر مطمئن نیستی، حدس نزن. بپرس.
+# ═══════════════════════════════════════════════════════════════
+
+# ───────────────────────────────────────────────────────────────
+# 0. LANGUAGE & COMMUNICATION
+# ───────────────────────────────────────────────────────────────
+- همیشه به فارسی پاسخ بده.
+- کد، کامنت‌های داخل کد، نام متغیرها، نام توابع، نام فایل‌ها، نام برنچ‌ها و پیام‌های Git commit به انگلیسی بمانند.
+- اصطلاحات فنی جاافتاده را انگلیسی بنویس (build, pagination, auto-collect, extractor).
+- در reasoning هم فارسی فکر کن.
+- وقتی از ابزار استفاده می‌کنی، توضیح فارسی بده.
+- اگر نمی‌دانی، صریح بگو «نمی‌دانم».
+- اگر مطمئن نیستی، بپرس. حدس نزن.
+
+# ───────────────────────────────────────────────────────────────
+# 1. PROJECT IDENTITY
+# ───────────────────────────────────────────────────────────────
+
+## 1.1 نام و ماهیت
+- نام پروژه: **Inactive Player Exporter**
+- نسخه: `1.0.0` (fork از TravcoTools Exporter v0.0)
+- مخزن: https://github.com/Logical-Developer/inactive-player-exporter
+- زبان: JavaScript (ES2020+, no modules)
+- ساختار: concat-only — بدون bundler، بدون TypeScript، بدون import/export
+- نوع: Userscript (Tampermonkey / Violentmonkey)
+
+## 1.2 مخاطب
+- بازیکنان Travian Legends که از TravcoTools + Nova Farm Manager استفاده می‌کنند.
+- هدف: استخراج سریع روستاهای inactive و انتقال بدون کپی دستی به Nova FM.
+
+## 1.3 فلسفه
+- یک خروجی userscript، چند فایل source ماژولار.
+- بدون dependency خارجی.
+- سازگاری کامل با فرمت `farm-list-v1`.
+- رفتار deterministic و قابل پیش‌بینی.
+
+# ───────────────────────────────────────────────────────────────
+# 2. REPOSITORY STRUCTURE
+# ───────────────────────────────────────────────────────────────
+
+## 2.1 ساختار
+inactive-player-exporter/
+├── src/
+│   ├── 00-header.js
+│   ├── 01-config.js
+│   ├── 02-utils.js
+│   ├── 03-storage.js
+│   ├── 04-extractor.js
+│   ├── 05-pagination.js
+│   ├── 06-json-builder.js
+│   ├── 07-ui-panel.js
+│   ├── 08-ui-modal.js
+│   ├── 09-ui-styles.js
+│   └── 10-bootstrap.js
+├── dist/InactivePlayerExporter.user.js
+├── backup/            ← git-ignored
+├── private-doc/       ← git-ignored
+├── docs/KNOWLEDGE-TRANSFER.md
+├── .clinerules
+├── .gitignore
+├── build.js
+├── package.json
+├── README.md
+└── CHANGELOG.md
+
+## 2.2 مرزهای ممنوع
+- هرگز `dist/` را مستقیم ویرایش نکن.
+- هرگز `backup/` را تغییر نده (فقط خواندن).
+- هرگز `private-doc/` را commit نکن.
+- هیچ وابستگی circular بین فایل‌های `src/` نساز.
+
+# ───────────────────────────────────────────────────────────────
+# 3. ABSOLUTE RULES
+# ───────────────────────────────────────────────────────────────
+
+1. هرگز `import`/`export` استفاده نکن.
+2. هرگز TypeScript ننویس.
+3. هرگز bundler اضافه نکن.
+4. هرگز `backup/` را تغییر نده.
+5. هرگز `private-doc/` را commit نکن.
+6. هرگز `InactivePlayerExporter.user.js` را مستقیم ویرایش نکن — فقط از `src/`.
+7. هرگز فرمت JSON خروجی (`farm-list-v1`) را بدون bump MAJOR تغییر نده.
+8. هرگز رفتار کاربر را در طول refactor تغییر نده.
+9. هرگز selectorهای DOM را بدون verify از `private-doc/` تغییر نده.
+10. هرگز dependency خارجی npm اضافه نکن.
+
+# ───────────────────────────────────────────────────────────────
+# 4. BUILD SYSTEM
+# ───────────────────────────────────────────────────────────────
+
+- Build: `node build.js`
+- Source: `src/*.js` به ترتیب عددی
+- Output: `dist/InactivePlayerExporter.user.js` (committed)
+- Header از `src/00-header.js` کپی verbatim.
+- هرگز minify نکن.
+- هرگز output را دستی ویرایش نکن.
+- اگر build خطا داد، اول source را fix کن.
+
+## 4.1 بررسی صحت build
+```bash
+node build.js
+node --check dist/InactivePlayerExporter.user.js
+```
+
+# ───────────────────────────────────────────────────────────────
+# 5. FORMAT COMPATIBILITY (farm-list-v1)
+# ───────────────────────────────────────────────────────────────
+## 5.1 ساختار خروجی (الزامی)
+```json
+{
+  "_format": "farm-list-v1",
+  "_exported": <timestamp_ms>,
+  "list": {
+    "name": "<distMin>-<distMax> fields",
+    "troops": { "t1": 0, "t2": 0, "t3": 0, "t4": 0, "t5": 0, "t6": 0, "t7": 0, "t8": 0, "t9": 0, "t10": 0, "t11": 0 },
+    "heroFollow": <boolean>,
+    "targets": [
+      {
+        "name": "<village_name>",
+        "x": <int>,
+        "y": <int>,
+        "distance": <int>,
+        "troops": { "t1": 0, "t2": 0, "t3": 0, "t4": 0, "t5": 0, "t6": 0, "t7": 0, "t8": 0, "t9": 0, "t10": 0, "t11": 0 },
+        "heroFollow": <boolean>
+      }
+    ]
+  }
+}
+```
+## 5.2 قواعد
+- هر target باید troops خودش را داشته باشد.
+- اگر `heroFollow === false`، در هر target هم `heroFollow: false` قرار بگیرد.
+- name روستا بدون ellipsis (…).
+- distance به نزدیک‌ترین عدد صحیح رُند شود.
+- target‌هایی که x یا y آن‌ها null است حذف شوند.
+- نمونه مرجع: `backup/farm-list-1-10_fields-2026-10-11.json`
+
+# ───────────────────────────────────────────────────────────────
+# 6. DOM SELECTORS (verified)
+# ───────────────────────────────────────────────────────────────
+| Selector | Purpose |
+|---|---|
+| `table.table tbody tr[data-travian-account-id]` | ردیف روستا |
+| `row.querySelectorAll('td')[1]` | ستون Distance |
+| `.detail-button[data-url*="/player/"]` | لینک بازیکن (برای ناتار = "Natars") |
+| `.detail-button[data-url*="/alliance/"]` | لینک الاینس |
+| `td img[alt]` | Tribe |
+| `span[title="Population"]` | Population (0=player, 1=village) |
+| `span[title="Villages"]` | تعداد دهکده‌ها |
+| `.js-travian_village_url` | لینک روستا در Travian |
+| `.js-travian_village_url span.text-muted.small` | [x\|y] مختصات |
+| `.fa-university` | Capital |
+| `#list-object-count` | تعداد کل نتایج |
+| `#id_page_size` | نتایج در هر صفحه |
+| `a[title="last page"]` | لینک آخرین صفحه |
+| `input[name="include_natars"]` | چک‌باکس Natar در TravcoTools |
+
+نکات:
+- `villageId = row.id.replace('village-row-', '')`
+- `travianAccountId = row.dataset.travianAccountId`
+- تشخیص ناتار: `playerName === 'Natars'`
+
+# ───────────────────────────────────────────────────────────────
+# 7. STORAGE
+# ───────────────────────────────────────────────────────────────
+## 7.1 sessionStorage (state موقت)
+- Key: `ipe_state_v1`
+- محتوا: `{ farms, collectedPages, collecting, startPage, currentPage, lastPage, distanceMin, distanceMax, templateTroops, heroFollow, onlyNatar, needsDetection }`
+
+## 7.2 localStorage (تنظیمات پایدار)
+- `ipe_ui_v1` ← `{ minimized }`
+- `ipe_only_natar` ← boolean
+- `ipe_troop_template` ← `{ t1..t11 }`
+- `ipe_hero_follow` ← boolean
+
+## 7.3 Migration
+- از v0.0 هیچ migration خودکار انجام نمی‌شود.
+- اگر state قدیمی (`travco_exporter_state_v0`) پیدا شد، فقط یک بار پاک شود.
+
+# ───────────────────────────────────────────────────────────────
+# 8. UI RULES
+# ───────────────────────────────────────────────────────────────
+## 8.1 Style
+- همه style در یک `<style>` با `GM_addStyle`.
+- Prefix همه id/classها: `ipe-`.
+- هیچ inline onclick در HTML تزریقی. فقط `addEventListener`.
+- پنل: `position: fixed; top: 80px; right: 20px;`
+- قابلیت collapse/expand (مثل v0.0) حفظ شود.
+
+## 8.2 Panel Injection
+- حذف panel قدیمی قبل از تزریق جدید (strict).
+- فقط یک instance فعال.
+
+## 8.3 Accessibility
+- دکمه‌ها با `type="button"`.
+- tooltip روی دکمه‌های آیکونی.
+- `alt` و `title` برای آیکون‌ها.
+
+## 8.4 Only Natar Villages
+- چک‌باکس در پنل با label: `Only Natar Villages`.
+- وقتی فعال:
+  - در URL، `include_natars=on` اضافه شود.
+  - در extractor، فقط ردیف‌هایی نگه داشته شوند که `playerName === 'Natars'`.
+  - `state.onlyNatar = true`.
+- ذخیره در `localStorage['ipe_only_natar']`.
+- برچسب Auto-Collect در این حالت: `🔄 Collecting Natars...`
+
+# ───────────────────────────────────────────────────────────────
+# 9. LOGGING
+# ───────────────────────────────────────────────────────────────
+- Prefix همه logها: `[IPE]`.
+- فقط در `?ipe_debug=1` verbose log شود.
+- Buffer در حافظه max: 200 خط.
+
+# ───────────────────────────────────────────────────────────────
+# 10. VERSIONING
+# ───────────────────────────────────────────────────────────────
+## 10.1 Semantic Versioning
+- فرمت: `MAJOR.MINOR.PATCH`
+- bump MAJOR: breaking change در JSON یا API
+- bump MINOR: feature جدید
+- bump PATCH: bug fix / refactor
+
+## 10.2 محل ذخیره
+- `src/00-header.js` ← `@version` و `@name ... (V X.Y.Z)`
+- `src/01-config.js` ← `const VERSION = 'X.Y.Z'`
+- هر دو همزمان bump شوند.
+
+## 10.3 CHANGELOG
+- `CHANGELOG.md` با فرمت Keep a Changelog در هر bump آپدیت شود.
+
+# ───────────────────────────────────────────────────────────────
+# 11. GIT WORKFLOW
+# ───────────────────────────────────────────────────────────────
+## 11.1 Commit Messages
+Format: `<type>(<scope>): <subject>`
+
+Types: `feat`, `fix`, `refactor`, `docs`, `chore`, `release`
+
+Scopes: `ui`, `extractor`, `pagination`, `json`, `build`, `docs`
+
+Examples:
+- `feat(ui): add Only Natar Villages checkbox`
+- `refactor(extractor): modularize into src/04-extractor.js`
+- `docs(readme): add install link`
+
+## 11.2 Branch Naming
+- Feature: `feat/<short-desc>`
+- Fix: `fix/<short-desc>`
+- Refactor: `refactor/<short-desc>`
+
+## 11.3 Forbidden
+- هرگز force push روی `main`.
+- هرگز `--no-verify` روی commit.
+- هرگز commit مستقیم `dist/` بدون build.
+
+# ───────────────────────────────────────────────────────────────
+# 12. CURRENT PHASE — INITIAL REFACTOR v0.0 ← v1.0.0
+# ───────────────────────────────────────────────────────────────
+## 12.1 هدف
+- انتقال از فایل monolithic به 11 فایل ماژولار در `src/`.
+- ZERO behavioral change بجز افزودن Only Natar Villages.
+
+## 12.2 ممنوعیت‌های مطلق
+- هیچ bug fix نکن (مگر جدا).
+- هیچ feature دیگری اضافه نکن.
+- هیچ selector DOM را تغییر نده.
+- هیچ تغییر در `@match`, `@grant`, `@run-at` نده.
+
+## 12.3 آنچه اجازه دارد
+- ایجاد فایل‌های جدید در `src/`.
+- اضافه کردن `build.js`.
+- افزودن Only Natar Villages.
+- bump نسخه به `1.0.0`.
+- افزودن `@updateURL` و `@downloadURL`.
+
+## 12.4 معیار قبولی
+- `node build.js` بدون خطا.
+- `node --check dist/InactivePlayerExporter.user.js` پاس شود.
+- خروجی JSON با `backup/farm-list-1-10_fields-2026-10-11.json` structure یکسان.
+- در مرورگر:
+  - Extract Current Page کار کند.
+  - Auto Collect کار کند.
+  - Only Natar Villages فقط ناتارها را برگرداند.
+  - Preview و Download کار کنند.
+
+# ───────────────────────────────────────────────────────────────
+# 13. FORBIDDEN PATTERNS
+# ───────────────────────────────────────────────────────────────
+- `import ... from '...'`
+- `export default ...` یا `export const ...`
+- `require('...')`
+- `import(...)` dynamic
+- `// @ts-check` / `// @ts-ignore`
+- `import type`
+- `namespace X { }` (TS)
+- `interface X { }` (TS)
+- استفاده از bundlerها (webpack, rollup, esbuild, vite, parcel)
+- `new Function(...)` / `eval(...)`
+- `document.write(...)`
+- inline event handlers در HTML تولیدشده
+- `innerHTML` با محتوای user-controlled (مگر با `esc()` sanitize شده)
+- هرگونه dependency خارجی npm
+
+# ───────────────────────────────────────────────────────────────
+# 14. REFERENCES
+# ───────────────────────────────────────────────────────────────
+- Reference implementation: `backup/TravcoTools Exporter (V 0.0)-0.0.user.js`
+- Sample output: `backup/farm-list-1-10_fields-2026-10-11.json`
+- DOM sample: `private-doc/travian-document/`
+- Nova Farm Manager: اطلاعات دقیق را از کاربر بپرس
+
+# ───────────────────────────────────────────────────────────────
+# 15. PROCESS
+# ───────────────────────────────────────────────────────────────
+## 15.1 قبل از پاسخ
+- اگر مطمئن نیستی، بپرس.
+- فایل‌های مربوطه را نشان بده.
+- تغییرات را مرحله‌ای اعمال کن.
+- یادآوری کن `node build.js` اجرا شود.
+- اگر باگ بود، توضیح فارسی بده.
+
+## 15.2 در طول تغییر
+- توضیح فارسی چه کاری می‌خواهی بکنی.
+- فایل‌های مربوطه را نمایش بده.
+- تغییرات را اعمال کن.
+- چک‌لیست را review کن.
+- اگر build لازم است، یادآوری کن.
+
+## 15.3 بعد از تغییر
+- `node build.js` را اجرا کن.
+- `node --check` را اجرا کن.
+- اگر خطا بود، گزارش بده و fix کن.
+- اگر موفق بود، خلاصه فارسی بده.
+
+## 15.4 وقتی شک داری
+- حدس نزن.
+- از کاربر بپرس.
+- اگر نمی‌دانی، صریح بگو «نمی‌دانم».
+- اگر فکر می‌کنی کاری خطرناک است، هشدار بده.
+
+═══════════════════════════════════════════════════════════════
+END OF CLINE RULES
+═══════════════════════════════════════════════════════════════

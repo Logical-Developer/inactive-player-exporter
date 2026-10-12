@@ -1,0 +1,26 @@
+{
+  "name": "inactive-player-exporter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Userscript that extracts inactive villages from TravcoTools and exports Nova Farm Manager compatible JSON (farm-list-v1).",
+  "keywords": [
+    "userscript",
+    "tampermonkey",
+    "travian",
+    "travcotools",
+    "nova-farm-manager"
+  ],
+  "homepage": "https://github.com/Logical-Developer/inactive-player-exporter",
+  "bugs": {
+    "url": "https://github.com/Logical-Developer/inactive-player-exporter/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Logical-Developer/inactive-player-exporter.git"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "node build.js",
+    "check": "node --check dist/InactivePlayerExporter.user.js"
+  }
+}

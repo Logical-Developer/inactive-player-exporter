@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Frozen versions and reference files
+backup/
+
+# Private HTML samples (Travian DOM dumps)
+private-doc/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+.env.local
